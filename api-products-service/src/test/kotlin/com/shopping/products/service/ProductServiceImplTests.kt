@@ -6,8 +6,10 @@ import com.shopping.products.model.Product
 import com.shopping.products.model.ProductRequest
 import com.shopping.products.model.ProductResponse
 import com.shopping.products.repository.ProductRepository
+import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.matchers.collections.shouldHaveSize
 import io.kotlintest.matchers.numerics.shouldBeExactly
+import io.kotlintest.properties.Gen
 import io.kotlintest.shouldBe
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -26,6 +28,8 @@ import org.springframework.web.context.WebApplicationContext
 import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import tests.product
+import tests.productRequest
 
 @SpringBootTest
 @Testcontainers
@@ -57,25 +61,31 @@ class ProductServiceImplTests (
     }
 
     @Test
-    fun `POST a new product should return 201 Created and save the product in the database`() {
-        val productRequest = setupProductRequest()
+    fun `POST a couple unique products should return 201 Created for each and save those products in the database`() {
+        val amountOfProductsAdded = 5
+        for (i in 1..amountOfProductsAdded) {
+            val productRequest = Gen.productRequest().random().first()
 
-        mvc.perform(
-            MockMvcRequestBuilders.post("/api/product")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(productRequest))
-        )
-            .andExpect(MockMvcResultMatchers.status().isCreated)
+            mvc.perform(
+                MockMvcRequestBuilders.post("/api/product")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(productRequest))
+            )
+                .andExpect(MockMvcResultMatchers.status().isCreated)
+        }
 
-        productRepository.findAll().size shouldBeExactly 1
+        productRepository.findAll().size shouldBeExactly amountOfProductsAdded
     }
 
     @Test
     fun `GET all products should return the correct products saved in repository`() {
-        val product = Product(name = "iPhone", description = "iPhone", price = 299)
-        productRepository.save(product)
+        val amountOfProductsAdded = 5
+        for (i in 1..amountOfProductsAdded) {
+            val product = Gen.product().random().first()
+            productRepository.save(product)
+        }
 
-        val result : List<ProductResponse> = mvc.perform(
+        val results : List<Product>  = mvc.perform(
             MockMvcRequestBuilders.get("/api/product")
                 .contentType(MediaType.APPLICATION_JSON)
         )
@@ -83,21 +93,8 @@ class ProductServiceImplTests (
             .andReturn().response
             .contentAsObject(objectMapper)
 
-        result shouldHaveSize 1
-        result.first().let {
-            it.id shouldBe product.id
-            it.name shouldBe product.name
-            it.description shouldBe product.description
-            it.price shouldBe product.price
-        }
-    }
-
-    private fun setupProductRequest() : ProductRequest {
-        return ProductRequest(
-            name = "iPhone",
-            description = "iPhone",
-            price = 1200
-        )
+        results shouldHaveSize amountOfProductsAdded
+        results shouldContainExactlyInAnyOrder productRepository.findAll()
     }
 
     private inline fun <reified T : Any> MockHttpServletResponse.contentAsObject(mapper: ObjectMapper = ObjectMapper()): T =
