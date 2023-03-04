@@ -3,14 +3,11 @@ package com.shopping.products.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.shopping.products.model.Product
-import com.shopping.products.model.ProductRequest
-import com.shopping.products.model.ProductResponse
 import com.shopping.products.repository.ProductRepository
 import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.matchers.collections.shouldHaveSize
 import io.kotlintest.matchers.numerics.shouldBeExactly
 import io.kotlintest.properties.Gen
-import io.kotlintest.shouldBe
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
